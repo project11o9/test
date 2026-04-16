@@ -177,16 +177,7 @@ body{
 <div class="spin-container">
     <div class="logo">Fidelity Rewards</div>
     <div class="pointer"></div>
-    <div id="wheel" class="wheel">
-        <div class="prize" style="transform:rotate(22.5deg)"><span>₹1K</span></div>
-        <div class="prize" style="transform:rotate(67.5deg)"><span>₹2K</span></div>
-        <div class="prize" style="transform:rotate(112.5deg)"><span>₹5K</span></div>
-        <div class="prize" style="transform:rotate(157.5deg)"><span>₹10K</span></div>
-        <div class="prize" style="transform:rotate(202.5deg)"><span>₹0</span></div>
-        <div class="prize" style="transform:rotate(247.5deg)"><span>₹3K</span></div>
-        <div class="prize" style="transform:rotate(292.5deg)"><span>₹15K</span></div>
-        <div class="prize" style="transform:rotate(337.5deg)"><span>₹25K</span></div>
-    </div>
+    <div id="wheel" class="wheel"></div>
     <button id="spinBtn" class="spin-btn" onclick="spinWheel()">SPIN</button>
 </div>
 
@@ -201,9 +192,8 @@ body{
 <script src="js/auth.js"></script>
 <script>
 let spinning=false;
-const token = localStorage.getItem('token');
 
-const rewardPool=[
+let rewardPool=[
  {value:1000, weight:35},
  {value:2000, weight:22},
  {value:3000, weight:15},
@@ -214,19 +204,63 @@ const rewardPool=[
  {value:0,    weight:18}
 ];
 
+function renderWheel() {
+    const wheel = document.getElementById("wheel");
+    const segments = Math.max(1, rewardPool.length);
+    const slice = 360 / segments;
+
+    const gradientStops = rewardPool.map((_, idx) => {
+        const start = idx * slice;
+        const end = (idx + 1) * slice;
+        const color = idx % 2 === 0 ? '#16a34a' : '#22c55e';
+        return `${color} ${start}deg ${end}deg`;
+    }).join(', ');
+    wheel.style.background = `conic-gradient(${gradientStops})`;
+
+    wheel.innerHTML = "";
+    rewardPool.forEach((r, idx) => {
+        const angle = (idx * slice) + (slice / 2);
+        const prize = document.createElement("div");
+        prize.className = "prize";
+        prize.style.transform = `rotate(${angle}deg)`;
+        const span = document.createElement("span");
+        span.textContent = r.value > 0 ? `₹${Math.round(r.value / 1000)}K` : "₹0";
+        prize.appendChild(span);
+        wheel.appendChild(prize);
+    });
+}
+
+async function loadSpinConfig() {
+    try {
+        const res = await fetch('/api/settings/spin', { credentials: 'include' });
+        if (!res.ok) return;
+        const config = await res.json();
+        if (config.enabled === false) {
+            document.getElementById("spinBtn").disabled = true;
+            document.getElementById("spinBtn").innerText = "SPIN DISABLED";
+            return;
+        }
+        if (Array.isArray(config.rewards) && config.rewards.length > 0) {
+            rewardPool = config.rewards.map((r) => ({
+                value: Number(r.value) || 0,
+                weight: Math.max(0, Number(r.probability || r.weight || 0))
+            }));
+            renderWheel();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 function weightedReward(){
     let total=rewardPool.reduce((a,b)=>a+b.weight,0);
+    if (total <= 0) return 0;
     let rand=Math.random()*total;
     for(const r of rewardPool){
         if(rand<r.weight) return r.value;
         rand-=r.weight;
     }
 }
-
-const indexMap={
-    1000:0, 2000:1, 5000:2, 10000:3,
-    0:4, 3000:5, 15000:6, 25000:7
-};
 
 function confettiBlast(){
     for(let i=0;i<70;i++){
@@ -248,9 +282,9 @@ async function spinWheel(){
 
     const wheel=document.getElementById("wheel");
     const reward=weightedReward();
-    const winIndex=indexMap[reward];
+    const winIndex=Math.max(0, rewardPool.findIndex((item) => item.value === reward));
 
-    const slice=360/8;
+    const slice=360/rewardPool.length;
     const stopAngle=360-(winIndex*slice)-(slice/2);
     const finalRotation=(5*360)+stopAngle;
 
@@ -259,12 +293,10 @@ async function spinWheel(){
     setTimeout(async ()=>{
         if(reward>0){
             try {
-                await fetch('/api/spin/claim', {
+                await authFetch('/api/spin/claim', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ reward })
                 });
             } catch (err) { console.error(err); }
@@ -283,6 +315,8 @@ async function spinWheel(){
         },3000);
     },5000);
 }
+renderWheel();
+loadSpinConfig();
 </script>
 </body>
 </html>

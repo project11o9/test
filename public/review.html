@@ -242,7 +242,7 @@ button:disabled{background:#9ca3af;}
                 <div id="stars" class="stars"></div>
 
                 <div id="ratingWarning" class="rating-warning">
-                    ⭐ Please give a 5-star rating to unlock commission
+                    ⭐ Please give at least a 4-star rating to unlock commission
                 </div>
 
                 <button id="submitBtn" disabled>Submit Review</button>
@@ -269,7 +269,6 @@ button:disabled{background:#9ca3af;}
 <script src="js/auth.js"></script>
 <script>
 let walletBalance=0, totalCommission=0, reviewedStocks=0;
-const token = localStorage.getItem('token');
 
 const stocks=[
     {name:"Apple",price:"$192 ▲1.2%",dir:"up",info:"Strong ecosystem growth"},
@@ -302,7 +301,7 @@ for(let i=1;i<=5;i++){
         [...starsEl.children].forEach(x=>x.classList.remove("active"));
         for(let j=0;j<i;j++) starsEl.children[j].classList.add("active");
 
-        if(rating<5){
+        if(rating<4){
             submitBtn.disabled=true;
             warningEl.classList.add("show");
             starsEl.classList.add("shake");
@@ -318,7 +317,7 @@ for(let i=1;i<=5;i++){
 async function loadInitialData() {
     try {
         const res = await fetch('/api/user/profile', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            credentials: 'include'
         });
         if (res.ok) {
             const user = await res.json();
@@ -345,28 +344,20 @@ function loadStock(){
 }
 
 submitBtn.onclick = async () => {
-    let commission;
-    if(Math.random() < 0.2){
-        commission = Math.floor(Math.random()*301)+300; // ₹300–₹600
-    }else{
-        commission = Math.floor(Math.random()*101)+150; // ₹150–₹250
-    }
-
     try {
-        const res = await fetch('/api/reviews/submit', {
+        const res = await authFetch('/api/reviews/submit', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 stockName: stocks[index].name,
-                rating: rating,
-                commission: commission
+                rating: rating
             })
         });
 
         if (res.ok) {
+            const data = await res.json();
+            const commission = Number(data.commission || 0);
             walletBalance += commission;
             totalCommission += commission;
             reviewedStocks++;
@@ -389,6 +380,10 @@ submitBtn.onclick = async () => {
                 index=(index+1)%stocks.length;
                 loadStock();
             },2300);
+        }
+        else {
+            const err = await res.json();
+            alert(err.error || 'Review submission failed');
         }
     } catch (err) {
         console.error(err);

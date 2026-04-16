@@ -434,37 +434,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     closeCredit.onclick = () => creditPanel.classList.remove("active");
 
     // Fetch User Data
-    const token = localStorage.getItem('token');
-    if (token) {
-        try {
-            const res = await fetch('/api/user/profile', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            if (res.ok) {
-                const user = await res.json();
-                document.getElementById("heroName").innerText = "Welcome, " + user.name;
-            } else if (res.status === 401 || res.status === 403) {
-                // Token invalid or expired
-                localStorage.removeItem('token');
-                window.location.href = 'login.html';
-            }
-        } catch (err) {
-            console.error(err);
+    try {
+        const res = await fetch('/api/user/profile', {
+            credentials: 'include'
+        });
+        if (res.ok) {
+            const user = await res.json();
+            document.getElementById("heroName").innerText = "Welcome, " + user.name;
+        } else if (res.status === 401 || res.status === 403) {
+            window.location.href = 'login.html';
         }
+    } catch (err) {
+        console.error(err);
     }
 
     // Fetch Stocks
     try {
-        const res = await fetch('/api/stocks');
+        const res = await fetch('/api/stocks/feed', { credentials: 'include' });
         if (res.ok) {
             const stocks = await res.json();
             const track = document.getElementById("stockTrack");
             if (stocks.length > 0) {
                 track.innerHTML = stocks.map(s => `
                     <div class="stock">
-                        <h4>${s.symbol}</h4>
+                        <h4>${s.symbol}${s.injected ? ' ⭐' : ''}</h4>
                         <div class="price">$${s.price}</div>
-                        <div class="change">+${(Math.random() * 5).toFixed(1)}%</div>
+                        <div class="change">${typeof s.change === 'number' ? `${s.change >= 0 ? '+' : ''}${s.change.toFixed(1)}%` : 'N/A'}</div>
                     </div>
                 `).join('') + track.innerHTML; // Prepend dynamic stocks
             }
