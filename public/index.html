@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="fidility project">
+<title>Fedility</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+
+/* ===== VIDEO BACKGROUND ===== */
+.video-bg{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    object-fit:cover;
+    z-index:-2;
+    pointer-events:none;
+}
+
+/* DARK OVERLAY */
+.overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    z-index:-1;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    overflow:hidden;
+    color:white;
+    background:#020617;
+}
+
+.container{
+    position:relative;
+    z-index:10;
+    width:100%;
+    max-width:420px;
+    height:100vh;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:50px 20px;
+}
+
+.logo{
+    text-align:center;
+    font-size:26px;
+    font-weight:700;
+    color:#22c55e;
+    margin:10px 0;
+}
+
+.center{
+    text-align:center;
+}
+
+.center h1{
+    font-size:26px;
+    margin-bottom:10px;
+}
+
+.center p{
+    font-size:14px;
+    opacity:.85;
+    margin-bottom:50px;
+}
+
+.actions{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.btn{
+    padding:15px;
+    border-radius:14px;
+    border:none;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    position:relative;
+    z-index:20;
+}
+
+.login{
+    background:#16a34a;
+    color:white;
+}
+
+.signup{
+    background:white;
+    color:#111;
+}
+
+/* ===== SLIDERS ===== */
+.top-slider,
+.bottom-slider{
+    overflow:hidden;
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(10px);
+    border-radius:14px;
+}
+
+.top-slider{
+    margin-bottom:15px;
+}
+
+.track{
+    display:flex;
+    width:max-content;
+    animation:scroll 22s linear infinite;
+}
+
+.stock{
+    padding:25px 20px;
+    white-space:nowrap;
+    border-right:1px solid rgba(255,255,255,.15);
+    font-size:16px;
+}
+
+.stock b{
+    display:block;
+    font-size:17px;
+}
+
+.price{
+    color:#22c55e;
+    font-weight:700;
+    font-size:14px;
+}
+
+@keyframes scroll{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+}
+
+html, body{
+    height:100%;
+    overflow:hidden;
+    touch-action:manipulation;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ✅ VIDEO BACKGROUND -->
+<video autoplay muted loop playsinline class="video-bg">
+    <source src="https://assets.mixkit.co/videos/preview/mixkit-financial-data-on-a-digital-screen-4235-large.mp4" type="video/mp4">
+</video>
+
+<div class="overlay"></div>
+
+<div class="container">
+
+    <div class="logo">Fedility</div>
+
+    <!-- INTERNATIONAL STOCKS -->
+    <div class="top-slider">
+        <div class="track">
+            <div class="stock"><b>Apple</b><div class="price">$192 ▲1.2%</div></div>
+            <div class="stock"><b>Tesla</b><div class="price">$244 ▲2.8%</div></div>
+            <div class="stock"><b>Nvidia</b><div class="price">$721 ▲3.1%</div></div>
+            <div class="stock"><b>Amazon</b><div class="price">$178 ▲0.9%</div></div>
+            <div class="stock"><b>Microsoft</b><div class="price">$402 ▲1.5%</div></div>
+        </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center">
+        <h1>Smart Trading Starts Here</h1>
+        <p>Explore charts, mock portfolios, and UI components for learning.</p>
+
+        <div class="actions">
+            <button class="btn login" id="loginBtn">
+                Login
+            </button>
+
+            <button class="btn signup" id="signupBtn">
+                Sign Up
+            </button>
+        </div>
+    </div>
+
+    <!-- INDIAN STOCKS -->
+    <div class="bottom-slider">
+        <div class="track">
+            <div class="stock"><b>Reliance</b><div class="price">₹2,845 ▲1.1%</div></div>
+            <div class="stock"><b>HDFC Bank</b><div class="price">₹1,620 ▲0.8%</div></div>
+            <div class="stock"><b>Infosys</b><div class="price">₹1,510 ▲2.3%</div></div>
+            <div class="stock"><b>TCS</b><div class="price">₹3,920 ▲0.7%</div></div>
+            <div class="stock"><b>ICICI Bank</b><div class="price">₹1,120 ▲1.4%</div></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.getElementById('loginBtn').addEventListener('click', () => {
+        window.location.href = 'login.html';
+    });
+    document.getElementById('signupBtn').addEventListener('click', () => {
+        window.location.href = 'signup.html';
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fidelity | Reviews</title>
+
+<style>
+body{
+    margin:0;
+    background:linear-gradient(180deg,#e5e7eb,#f8fafc);
+    display:flex;
+    justify-content:center;
+    font-family:Poppins,sans-serif;
+}
+
+.container{
+    width:100%;
+    max-width:400px;
+    height:100vh;
+    background:#f4f6f5;
+    display:flex;
+    flex-direction:column;
+}
+
+/* HEADER */
+.header{
+    background:#fff;
+    padding:18px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+.logo{
+    color:#16a34a;
+    font-weight:800;
+    font-size:22px;
+}
+
+/* WALLET PANEL */
+.market-box{
+    background:#fff;
+    margin:15px;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.wallet{
+    display:flex;
+    justify-content:space-between;
+    padding:18px 10px;
+    background:linear-gradient(135deg,#16a34a,#15803d);
+    color:#fff;
+}
+.wallet-item{flex:1;text-align:center;}
+.wallet-item p{margin:0;font-size:11px;opacity:.9;}
+.wallet-item h3{margin-top:6px;font-size:16px;font-weight:800;}
+
+.market-track{
+    display:flex;
+    width:max-content;
+    animation:scrollMarket 18s linear infinite;
+    background:#f9fafb;
+}
+.market-item{
+    padding:12px 18px;
+    font-size:13px;
+    font-weight:600;
+    border-right:1px solid #eee;
+    color:#16a34a;
+    white-space:nowrap;
+}
+@keyframes scrollMarket{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+}
+
+/* MAIN */
+.main{flex:1;padding:20px;text-align:center;}
+
+.spinner{
+    width:52px;height:52px;
+    border:5px solid #e5e7eb;
+    border-top:5px solid #16a34a;
+    border-radius:50%;
+    margin:auto;
+    animation:spin 1s linear infinite;
+}
+@keyframes spin{100%{transform:rotate(360deg);}}
+
+/* STOCK CARD */
+.stock-card{
+    background:#fff;
+    border-radius:20px;
+    padding:28px;
+    margin-top:25px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+.stock-name{font-size:24px;font-weight:700;}
+.price{margin-top:8px;font-weight:700;}
+.price.up{color:#16a34a;}
+.price.down{color:#ef4444;}
+.info{font-size:13px;color:#6b7280;margin:14px 0 22px;}
+
+.stars{font-size:36px;letter-spacing:8px;cursor:pointer;}
+.star{color:#e5e7eb;transition:.2s;}
+.star.active{color:#facc15;transform:scale(1.2);}
+
+/* ⭐ PREMIUM WARNING */
+.rating-warning{
+    font-size:13px;
+    color:#ef4444;
+    margin-top:10px;
+    opacity:0;
+    transform:translateY(-6px);
+    transition:.3s ease;
+    font-weight:500;
+}
+.rating-warning.show{
+    opacity:1;
+    transform:translateY(0);
+}
+
+/* shake animation */
+@keyframes shake{
+  0%{transform:translateX(0);}
+  25%{transform:translateX(-4px);}
+  50%{transform:translateX(4px);}
+  75%{transform:translateX(-3px);}
+  100%{transform:translateX(0);}
+}
+.shake{animation:shake .35s ease;}
+
+button{
+    width:100%;
+    margin-top:20px;
+    padding:14px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,#16a34a,#0f7a36);
+    color:#fff;
+    font-weight:700;
+}
+button:disabled{background:#9ca3af;}
+
+.bottom-nav{
+    height:70px;
+    background:#fff;
+    border-top:1px solid #eee;
+    display:flex;
+}
+.nav-item{
+    flex:1;
+    text-align:center;
+    padding-top:10px;
+    text-decoration:none;
+    color:#6b7280;
+}
+
+/* POPUP */
+.reward-popup{
+    position:fixed;
+    left:50%;
+    bottom:-200px;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:400px;
+    padding:15px;
+    transition:bottom .45s cubic-bezier(.22,1,.36,1);
+    z-index: 1000;
+}
+.reward-popup.show{bottom:80px;}
+
+.reward-card{
+    background:#fff;
+    border-radius:18px;
+    padding:16px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    box-shadow:0 15px 40px rgba(0,0,0,.18);
+}
+.reward-icon{
+    font-size:28px;
+    background:#ecfdf5;
+    width:50px;height:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:12px;
+}
+.reward-text h3{margin:0;font-size:15px;color:#166534;}
+.reward-text p{margin:2px 0 0;font-size:18px;font-weight:700;color:#16a34a;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <header class="header">
+        <div class="logo">Fidelity</div>
+    </header>
+
+    <div class="market-box">
+        <div class="wallet">
+            <div class="wallet-item">
+                <p>Wallet Balance</p>
+                <h3 id="walletBalance">₹0.00</h3>
+            </div>
+            <div class="wallet-item">
+                <p>Total Commission</p>
+                <h3 id="totalCommission">₹0.00</h3>
+            </div>
+            <div class="wallet-item">
+                <p>Stocks Reviewed</p>
+                <h3 id="reviewCount">0</h3>
+            </div>
+        </div>
+
+        <div class="market-track">
+            <div class="market-item">Apple $192 ▲1.2%</div>
+            <div class="market-item">Tesla $244 ▼0.8%</div>
+            <div class="market-item">Nvidia $721 ▲3.1%</div>
+            <div class="market-item">Amazon $178 ▲0.9%</div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div id="loader">
+            <div class="spinner"></div>
+            <p>Scanning market for next stock...</p>
+        </div>
+
+        <div id="stockBox" style="display:none;">
+            <div class="stock-card">
+                <div id="stockName" class="stock-name"></div>
+                <div id="stockPrice" class="price"></div>
+                <p id="stockInfo" class="info"></p>
+
+                <div id="stars" class="stars"></div>
+
+                <div id="ratingWarning" class="rating-warning">
+                    ⭐ Please give a 5-star rating to unlock commission
+                </div>
+
+                <button id="submitBtn" disabled>Submit Review</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">🏠 Home</a>
+        <a href="#" class="nav-item active">⭐ Reviews</a>
+    </nav>
+</div>
+
+<div id="rewardPopup" class="reward-popup">
+    <div class="reward-card">
+        <div class="reward-icon">💰</div>
+        <div class="reward-text">
+            <h3>Commission Earned</h3>
+            <p id="rewardAmount"></p>
+        </div>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+let walletBalance=0, totalCommission=0, reviewedStocks=0;
+const token = localStorage.getItem('token');
+
+const stocks=[
+    {name:"Apple",price:"$192 ▲1.2%",dir:"up",info:"Strong ecosystem growth"},
+    {name:"Tesla",price:"$244 ▼0.8%",dir:"down",info:"EV competition rising"},
+    {name:"Nvidia",price:"$721 ▲3.1%",dir:"up",info:"AI demand booming"},
+    {name:"Amazon",price:"$178 ▲0.9%",dir:"up",info:"AWS profits improving"}
+];
+
+let index=0, rating=0;
+
+const loader=document.getElementById("loader");
+const box=document.getElementById("stockBox");
+const nameEl=document.getElementById("stockName");
+const priceEl=document.getElementById("stockPrice");
+const infoEl=document.getElementById("stockInfo");
+const starsEl=document.getElementById("stars");
+const submitBtn=document.getElementById("submitBtn");
+const warningEl=document.getElementById("ratingWarning");
+const popup=document.getElementById("rewardPopup");
+const rewardAmount=document.getElementById("rewardAmount");
+
+/* stars */
+for(let i=1;i<=5;i++){
+    const s=document.createElement("span");
+    s.innerHTML="★";
+    s.className="star";
+
+    s.onclick=()=>{
+        rating=i;
+        [...starsEl.children].forEach(x=>x.classList.remove("active"));
+        for(let j=0;j<i;j++) starsEl.children[j].classList.add("active");
+
+        if(rating<5){
+            submitBtn.disabled=true;
+            warningEl.classList.add("show");
+            starsEl.classList.add("shake");
+            setTimeout(()=>starsEl.classList.remove("shake"),350);
+        }else{
+            submitBtn.disabled=false;
+            warningEl.classList.remove("show");
+        }
+    };
+    starsEl.appendChild(s);
+}
+
+async function loadInitialData() {
+    try {
+        const res = await fetch('/api/user/profile', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+            const user = await res.json();
+            walletBalance = user.wallet_balance;
+            document.getElementById("walletBalance").textContent = `₹${walletBalance.toFixed(2)}`;
+        }
+    } catch (err) { console.error(err); }
+}
+
+function loadStock(){
+    box.style.display="none";
+    loader.style.display="block";
+
+    setTimeout(()=>{
+        const s=stocks[index];
+        nameEl.textContent=s.name;
+        priceEl.textContent=s.price;
+        priceEl.className="price "+s.dir;
+        infoEl.textContent=s.info;
+
+        loader.style.display="none";
+        box.style.display="block";
+    },1200);
+}
+
+submitBtn.onclick = async () => {
+    let commission;
+    if(Math.random() < 0.2){
+        commission = Math.floor(Math.random()*301)+300; // ₹300–₹600
+    }else{
+        commission = Math.floor(Math.random()*101)+150; // ₹150–₹250
+    }
+
+    try {
+        const res = await fetch('/api/reviews/submit', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                stockName: stocks[index].name,
+                rating: rating,
+                commission: commission
+            })
+        });
+
+        if (res.ok) {
+            walletBalance += commission;
+            totalCommission += commission;
+            reviewedStocks++;
+
+            document.getElementById("walletBalance").textContent=`₹${walletBalance.toFixed(2)}`;
+            document.getElementById("totalCommission").textContent=`₹${totalCommission.toFixed(2)}`;
+            document.getElementById("reviewCount").textContent=reviewedStocks;
+
+            rewardAmount.textContent=`+ ₹${commission}`;
+            popup.classList.add("show");
+
+            rating=0;
+            submitBtn.disabled=true;
+            warningEl.classList.remove("show");
+            [...starsEl.children].forEach(x=>x.classList.remove("active"));
+
+            setTimeout(()=>popup.classList.remove("show"),2000);
+
+            setTimeout(()=>{
+                index=(index+1)%stocks.length;
+                loadStock();
+            },2300);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+loadInitialData();
+loadStock();
+</script>
+</body>
+</html>

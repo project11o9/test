@@ -1,0 +1,127 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Core user data including wallet and credit score",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "wallet_balance": { "type": "number" },
+        "credit_score": { "type": "number" },
+        "kyc_status": { "type": "string", "enum": ["Verified", "Pending", "Rejected"] },
+        "bank_details": { "type": "object" },
+        "upi_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Blocked"] },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["uid", "name", "email", "wallet_balance", "credit_score", "status", "role"]
+    },
+    "Stock": {
+      "title": "Stock",
+      "description": "Stock available for review",
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "order": { "type": "number" }
+      },
+      "required": ["symbol", "name", "price", "order"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System alert sent to users",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "success"] },
+        "target_uids": { "type": "array" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "type", "target_uids", "timestamp"]
+    },
+    "FeatureFlag": {
+      "title": "Feature Flag",
+      "description": "Global feature toggle",
+      "type": "object",
+      "properties": {
+        "review_system": { "type": "boolean" },
+        "wallet_access": { "type": "boolean" },
+        "withdrawal_option": { "type": "boolean" },
+        "spin_feature": { "type": "boolean" },
+        "credit_score_panel": { "type": "boolean" },
+        "profile_editing": { "type": "boolean" }
+      }
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Wallet transaction record",
+      "type": "object",
+      "properties": {
+        "user_uid": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["deposit", "withdrawal", "reward", "manual"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "completed"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" }
+      },
+      "required": ["user_uid", "amount", "type", "status", "timestamp"]
+    },
+    "Deposit": {
+      "title": "Deposit Request",
+      "description": "Pending deposit from user",
+      "type": "object",
+      "properties": {
+        "user_uid": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "timestamp": { "type": "string" }
+      }
+    },
+    "Withdraw": {
+      "title": "Withdraw Request",
+      "description": "Pending withdrawal from user",
+      "type": "object",
+      "properties": {
+        "user_uid": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "timestamp": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/stocks/{stockId}": {
+      "schema": "Stock",
+      "description": "Stock list"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "System-wide or targeted notifications"
+    },
+    "/settings/features": {
+      "schema": "FeatureFlag",
+      "description": "Global feature switches"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Wallet transaction history"
+    },
+    "/deposits/{depositId}": {
+      "schema": "Deposit",
+      "description": "Pending deposits"
+    },
+    "/withdraws/{withdrawId}": {
+      "schema": "Withdraw",
+      "description": "Pending withdrawals"
+    }
+  }
+}

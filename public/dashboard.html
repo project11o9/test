@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Education dashboard UI demo project for learning web development. Not a real platform.">
+<title>Dashboard Demo</title>
+
+<style>
+:root{
+    --primary:#16a34a;
+    --primary-dark:#0f7a36;
+    --bg-light:#f4f6f5;
+    --text-main:#1f2937;
+    --text-muted:#6b7280;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+
+/* Prevent body scroll to keep it "App-like" */
+html,body{
+    height:100%;
+    overflow:hidden;
+    background:#e5e7eb;
+    display:flex;
+    justify-content:center;
+}
+
+.container{
+    width:100%;
+    max-width:400px;
+    height:100%;
+    background:var(--bg-light);
+    display:flex;
+    flex-direction:column;
+    /* This distributes space evenly if content is short */
+    justify-content: space-between;
+     
+}
+
+/* HEADER */
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 20px;
+    background:#fff;
+}
+.logo{color:var(--primary);font-size:20px;font-weight:700;}
+.icons span{font-size:18px;margin-left:10px;}
+
+/* CONTENT WRAPPER - This grows to fill space */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around; /* Distributes sections evenly */
+    padding-bottom: 10px;
+    overflow-y: auto;
+}
+
+.hero{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:#fff;
+    padding:30px;
+    margin:0 10px;
+    border-radius:18px;
+}
+.hero h2{font-size:18px;margin-bottom:5px;}
+.hero p{font-size:12px;opacity:.9;}
+
+/* SLIDERS */
+.slider, .short-slider {
+    padding:20px;
+    margin: 5px 10px;
+    overflow: hidden;
+}
+
+.slider {
+    background:#fff;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+
+.slide-track, .short-track{
+    display:flex;
+    width:max-content;
+    animation:scroll 18s linear infinite;
+}
+
+.stock{
+    min-width:120px;
+    padding:15px;
+    border-right:1px solid #eee;
+}
+.stock h4{font-size:13px;}
+.price{font-weight:600;color:var(--primary);}
+.change{font-size:11px;color:green;}
+
+/* MANAGE STOCK */
+.section-title{font-size:14px;font-weight:600;padding:5px 15px;}
+
+.promo-card{
+    background:#fff;
+    margin:0 10px;
+    border-radius:15px;
+    padding:30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.promo-left ul{list-style:none;font-size:12px;color:var(--text-muted);}
+.promo-left li::before{content:"✔ ";color:var(--primary);}
+
+.btn{
+    background:var(--primary);
+    color:white;
+    padding:10px 10px;
+    border-radius:10px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+
+}
+
+.short-card{
+    background:#fff;
+    border-radius:15px;
+    padding:20px;
+    margin-right: 10px;
+    min-width:160px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+.short-card h4{font-size:13px;}
+.short-card p{font-size:11px;color:var(--text-muted);}
+.short-price{font-weight:600;color:var(--primary);margin-top:5px;}
+
+@keyframes scroll{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+}
+
+/* FOOTER - Fixed to bottom naturally */
+.bottom-nav{
+    height:70px;
+    background:#fff;
+    display:flex;
+    border-top:1px solid #eee;
+    padding-bottom: env(safe-area-inset-bottom); /* For iPhone notches */
+}
+
+.nav-item{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    color:var(--text-muted);
+    font-size:11px;
+    cursor:pointer;
+
+}
+#profileBtn{
+    cursor: pointer;
+}    
+
+/* ===== CREDIT PREMIUM PANEL ===== */
+
+.credit-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.55);
+backdrop-filter:blur(8px);
+display:flex;
+justify-content:center;
+align-items:center;
+opacity:0;
+pointer-events:none;
+transition:.4s;
+z-index:200;
+}
+
+.credit-overlay.active{
+opacity:1;
+pointer-events:auto;
+}
+
+/* CARD */
+.credit-card{
+width:90vw;
+max-width:360px;
+background:linear-gradient(180deg,#ffffff,#ecfdf5);
+border-radius:26px;
+padding:28px 22px;
+text-align:center;
+box-shadow:0 25px 60px rgba(0,0,0,.35);
+animation:scaleIn .35s ease;
+}
+
+@keyframes scaleIn{
+from{transform:scale(.85);opacity:.5;}
+to{transform:scale(1);opacity:1;}
+}
+
+.credit-title{
+font-weight:700;
+letter-spacing:2px;
+color:#065f46;
+margin-bottom:18px;
+}
+
+/* SHIELD */
+.shield-wrapper{
+display:flex;
+justify-content:center;
+margin:10px 0 20px;
+}
+
+.shield{
+width:150px;
+height:170px;
+background:linear-gradient(135deg,#16a34a,#0f7a36);
+clip-path:polygon(50% 0%,90% 18%,90% 60%,50% 100%,10% 60%,10% 18%);
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+box-shadow:0 15px 30px rgba(0,0,0,.25);
+}
+
+.shield-half{
+position:absolute;
+left:0;
+top:0;
+width:50%;
+height:100%;
+background:rgba(255,255,255,.25);
+}
+
+.score{
+font-size:38px;
+font-weight:700;
+color:#fff;
+}
+
+/* PROGRESS */
+.progress-wrap{
+display:flex;
+align-items:center;
+gap:10px;
+margin-top:10px;
+}
+
+.progress-bar{
+flex:1;
+height:8px;
+background:#d1fae5;
+border-radius:20px;
+overflow:hidden;
+}
+
+#progressFill{
+height:100%;
+width:0%;
+background:#16a34a;
+transition:1s ease;
+}
+
+/* TEXT */
+.rule-title{
+margin-top:18px;
+font-weight:600;
+color:#065f46;
+}
+
+.credit-text{
+font-size:13px;
+color:#4b5563;
+margin-top:8px;
+line-height:1.5;
+}
+
+.close-credit{
+margin-top:18px;
+width:100%;
+padding:12px;
+border:none;
+border-radius:12px;
+background:#16a34a;
+color:white;
+font-weight:600;
+cursor:pointer;
+}
+.nav-icon{
+    width:22px;
+    height:22px;
+    margin-left:12px;
+    cursor:pointer;
+    transition:.25s;
+}
+
+.nav-icon:active{
+    transform:scale(.9);
+}    
+
+.nav-item span{font-size:20px;}
+.nav-item.active{color:var(--primary);font-weight:600;}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+    <header class="header">    
+        <div class="logo">Fedility</div>
+        <div class="icons">
+            <span id="creditBtn" style="cursor:pointer">🛡️</span>        
+            <span id="spinWheel" style="cursor:pointer">🎡</span>
+            <span id="walletBtn" style="cursor:pointer">💰</span>              
+            <span>🔔</span>
+            <span id="profileBtn" style="cursor:pointer">👤</span>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <section class="hero">
+            <h2 id="heroName">Fedility</h2>
+            <p>Smart Secure and trusted by millions</p>
+        </section>
+
+        <div class="slider">
+            <div class="slide-track" id="stockTrack">
+                <!-- Stocks will be injected here -->
+                <div class="stock"><h4>Apple</h4><div class="price">$192.33</div><div class="change">+1.2%</div></div>
+                <div class="stock"><h4>Tesla</h4><div class="price">$244.90</div><div class="change">+2.8%</div></div>
+                <div class="stock"><h4>Amazon</h4><div class="price">$178.20</div><div class="change">+0.9%</div></div>
+                <div class="stock"><h4>Nvidia</h4><div class="price">$721.40</div><div class="change">+3.1%</div></div>
+            </div>
+        </div>
+
+        <div class="promo-card">
+            <div class="promo-left">
+                <ul>
+                    <li>Building trust with people</li>
+                    <li>Our customer is first priority</li>
+                    <li>24/7 customer support assist</li>
+                </ul>
+            </div>
+            <div class="promo-right">
+                <button class="btn">Explore</button>
+            </div>
+        </div>
+
+        <div class="short-slider">
+            <div class="short-track" id="indianStockTrack">
+                <div class="short-card"><h4>Reliance</h4><p>Energy Leader</p><div class="short-price">₹2,845 ▲1.1%</div></div>
+                <div class="short-card"><h4>HDFC Bank</h4><p>Quarterly Growth</p><div class="short-price">₹1,620 ▲0.8%</div></div>
+                <div class="short-card"><h4>Infosys</h4><p>IT Rising</p><div class="short-price">₹1,510 ▲2.3%</div></div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item active">
+            <span>🏠</span>
+            Homepage
+        </a>
+        <a href="#" class="nav-item">
+            <span>📈</span>
+            Market
+        </a>
+        <a href="review.html" class="nav-item">
+            <span>⭐</span>
+            Reviews
+        </a>
+    </nav>
+</div>
+
+<!-- ===== PREMIUM CREDIT SCORE PANEL ===== -->
+<div id="creditPanel" class="credit-overlay">
+  <div class="credit-card">
+      <div class="credit-title">WITHDRAWAL SCORE</div>
+      <div class="shield-wrapper">
+          <div class="shield">
+              <div class="shield-half"></div>
+              <div class="score" id="scoreNumber">0</div>
+          </div>
+      </div>
+      <div class="progress-wrap">
+          <span>0</span>
+          <div class="progress-bar">
+              <div id="progressFill"></div>
+          </div>
+          <span>100</span>
+      </div>
+      <div class="rule-title">Withdrawal point rule</div>
+      <p class="credit-text">
+          Regular activity improves your Withdrawal level.
+          Verified accounts and successful withdrawals
+          increase trust score and unlock faster payouts.
+      </p>
+      <button class="close-credit" id="closeCredit">Close</button>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    // Navigation
+    document.getElementById("profileBtn").onclick = () => window.location.href = "profile.html";
+    document.getElementById("walletBtn").onclick = () => window.location.href = "wallet.html";
+    document.getElementById("spinWheel").onclick = () => window.location.href = "spin.html";
+
+    // Credit Panel
+    const creditBtn = document.getElementById("creditBtn");
+    const creditPanel = document.getElementById("creditPanel");
+    const closeCredit = document.getElementById("closeCredit");
+    const scoreNumber = document.getElementById("scoreNumber");
+    const progressFill = document.getElementById("progressFill");
+
+    creditBtn.onclick = () => {
+        creditPanel.classList.add("active");
+        let score = 0;
+        const target = 100;
+        const interval = setInterval(() => {
+            score++;
+            scoreNumber.innerText = score;
+            progressFill.style.width = score + "%";
+            if (score >= target) clearInterval(interval);
+        }, 20);
+    };
+
+    closeCredit.onclick = () => creditPanel.classList.remove("active");
+
+    // Fetch User Data
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const res = await fetch('/api/user/profile', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const user = await res.json();
+                document.getElementById("heroName").innerText = "Welcome, " + user.name;
+            } else if (res.status === 401 || res.status === 403) {
+                // Token invalid or expired
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // Fetch Stocks
+    try {
+        const res = await fetch('/api/stocks');
+        if (res.ok) {
+            const stocks = await res.json();
+            const track = document.getElementById("stockTrack");
+            if (stocks.length > 0) {
+                track.innerHTML = stocks.map(s => `
+                    <div class="stock">
+                        <h4>${s.symbol}</h4>
+                        <div class="price">$${s.price}</div>
+                        <div class="change">+${(Math.random() * 5).toFixed(1)}%</div>
+                    </div>
+                `).join('') + track.innerHTML; // Prepend dynamic stocks
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+});
+</script>
+
+</body>
+</html>

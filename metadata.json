@@ -1,0 +1,6 @@
+{
+  "name": "Fidelity Admin Pro",
+  "description": "A comprehensive administrative control center for the Fidelity platform, featuring real-time user management, wallet control, stock injection logic, and global feature toggles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

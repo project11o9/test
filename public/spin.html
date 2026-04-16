@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spin & Win | Fidelity</title>
+
+<style>
+:root{
+    --green:#16a34a;
+    --light:#22c55e;
+}
+
+/* PAGE */
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:linear-gradient(180deg,#ecfdf5,#ffffff);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.spin-container{
+    text-align:center;
+}
+
+/* ===== LOGO ===== */
+.logo{
+    font-size:26px;
+    font-weight:900;
+    color:var(--green);
+    margin-bottom:40px;
+}
+
+/* POINTER */
+.pointer{
+    width:0;height:0;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-bottom:32px solid var(--green);
+    margin:auto;
+    margin-bottom:-12px;
+    z-index: 10;
+    position: relative;
+}
+
+/* WHEEL */
+.wheel{
+    width:330px;
+    height:330px;
+    border-radius:50%;
+    border:10px solid var(--green);
+    position:relative;
+    box-shadow:0 18px 50px rgba(0,0,0,.2);
+    transition:transform 5s cubic-bezier(.17,.67,.12,.99);
+
+    background:conic-gradient(
+        #16a34a 0deg 45deg,
+        #22c55e 45deg 90deg,
+        #16a34a 90deg 135deg,
+        #22c55e 135deg 180deg,
+        #16a34a 180deg 225deg,
+        #22c55e 225deg 270deg,
+        #16a34a 270deg 315deg,
+        #22c55e 315deg 360deg
+    );
+}
+
+.prize{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform-origin:0 0;
+    font-weight:800;
+    color:#fff;
+}
+
+.prize span{
+    position:absolute;
+    transform:translate(-50%, -145px);
+}
+
+/* BUTTON */
+.spin-btn{
+    margin-top:28px;
+    padding:14px 45px;
+    border:none;
+    border-radius:12px;
+    font-size:18px;
+    color:#fff;
+    cursor:pointer;
+    background:linear-gradient(135deg,#16a34a,#15803d);
+    box-shadow:0 10px 20px rgba(0,0,0,.2);
+}
+
+.spin-btn:disabled{
+    opacity:.6;
+}
+
+/* POPUP */
+.reward-popup{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%) scale(.6);
+    background:#fff;
+    padding:25px 35px;
+    border-radius:18px;
+    font-size:26px;
+    font-weight:800;
+    color:var(--green);
+    box-shadow:0 20px 60px rgba(0,0,0,.3);
+    opacity:0;
+    transition:.4s;
+    z-index: 1001;
+}
+
+.reward-popup.show{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
+}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:400px;
+    height:65px;
+    background:#fff;
+    border-top:1px solid #e5e7eb;
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+    box-shadow:0 -4px 12px rgba(0,0,0,.05);
+}
+
+.nav-btn{
+    text-decoration:none;
+    color:#6b7280;
+    font-size:13px;
+    font-weight:600;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+.nav-btn.active{
+    color:#16a34a;
+}
+
+/* CONFETTI */
+.confetti{
+    position:fixed;
+    width:8px;
+    height:8px;
+    top:-10px;
+    animation:fall 2s linear forwards;
+    z-index: 2000;
+}
+
+@keyframes fall{
+    to{
+        transform:translateY(110vh) rotate(720deg);
+        opacity:0;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="spin-container">
+    <div class="logo">Fidelity Rewards</div>
+    <div class="pointer"></div>
+    <div id="wheel" class="wheel">
+        <div class="prize" style="transform:rotate(22.5deg)"><span>₹1K</span></div>
+        <div class="prize" style="transform:rotate(67.5deg)"><span>₹2K</span></div>
+        <div class="prize" style="transform:rotate(112.5deg)"><span>₹5K</span></div>
+        <div class="prize" style="transform:rotate(157.5deg)"><span>₹10K</span></div>
+        <div class="prize" style="transform:rotate(202.5deg)"><span>₹0</span></div>
+        <div class="prize" style="transform:rotate(247.5deg)"><span>₹3K</span></div>
+        <div class="prize" style="transform:rotate(292.5deg)"><span>₹15K</span></div>
+        <div class="prize" style="transform:rotate(337.5deg)"><span>₹25K</span></div>
+    </div>
+    <button id="spinBtn" class="spin-btn" onclick="spinWheel()">SPIN</button>
+</div>
+
+<div class="bottom-nav">
+    <a href="dashboard.html" class="nav-btn">🏠<span>Home</span></a>
+    <a href="wallet.html" class="nav-btn">💰<span>Wallet</span></a>
+    <a href="spin.html" class="nav-btn active">🎡<span>Spin</span></a>
+</div>
+
+<div id="rewardPopup" class="reward-popup"></div>
+
+<script src="js/auth.js"></script>
+<script>
+let spinning=false;
+const token = localStorage.getItem('token');
+
+const rewardPool=[
+ {value:1000, weight:35},
+ {value:2000, weight:22},
+ {value:3000, weight:15},
+ {value:5000, weight:12},
+ {value:10000,weight:8},
+ {value:15000,weight:5},
+ {value:25000,weight:2}, // jackpot rare
+ {value:0,    weight:18}
+];
+
+function weightedReward(){
+    let total=rewardPool.reduce((a,b)=>a+b.weight,0);
+    let rand=Math.random()*total;
+    for(const r of rewardPool){
+        if(rand<r.weight) return r.value;
+        rand-=r.weight;
+    }
+}
+
+const indexMap={
+    1000:0, 2000:1, 5000:2, 10000:3,
+    0:4, 3000:5, 15000:6, 25000:7
+};
+
+function confettiBlast(){
+    for(let i=0;i<70;i++){
+        const c=document.createElement("div");
+        c.className="confetti";
+        c.style.left=Math.random()*100+"%";
+        c.style.background=`hsl(${Math.random()*360},70%,50%)`;
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),2000);
+    }
+}
+
+async function spinWheel(){
+    if(spinning) return;
+    spinning=true;
+
+    const btn=document.getElementById("spinBtn");
+    btn.disabled=true;
+
+    const wheel=document.getElementById("wheel");
+    const reward=weightedReward();
+    const winIndex=indexMap[reward];
+
+    const slice=360/8;
+    const stopAngle=360-(winIndex*slice)-(slice/2);
+    const finalRotation=(5*360)+stopAngle;
+
+    wheel.style.transform=`rotate(${finalRotation}deg)`;
+
+    setTimeout(async ()=>{
+        if(reward>0){
+            try {
+                await fetch('/api/spin/claim', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ reward })
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        const popup=document.getElementById("rewardPopup");
+        popup.innerText = reward>0 ? `🎉 You Won ₹${reward.toLocaleString("en-IN")}` : "😢 Better Luck Next Time";
+        popup.classList.add("show");
+
+        if(reward>0) confettiBlast();
+
+        setTimeout(()=>{
+            popup.classList.remove("show");
+            btn.disabled=false;
+            spinning=false;
+        },3000);
+    },5000);
+}
+</script>
+</body>
+</html>

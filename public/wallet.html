@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Fidelity | Wallet</title>
+
+<style>
+body{
+margin:0;
+font-family:Poppins,sans-serif;
+background:#f4f6f5;
+display:flex;
+justify-content:center;
+}
+
+.container{
+width:100%;
+max-width:400px;
+min-height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+.header{
+padding:18px;
+text-align:center;
+}
+
+.logo{
+color:#16a34a;
+font-size:22px;
+font-weight:800;
+}
+
+.balance-card{
+background:linear-gradient(135deg,#16a34a,#0f7a36);
+margin:20px;
+border-radius:20px;
+padding:25px;
+color:#fff;
+}
+
+.balance{
+font-size:32px;
+font-weight:800;
+margin-top:10px
+}
+
+.actions{
+display:flex;
+gap:10px;
+margin:0 20px;
+}
+
+.action-btn{
+flex:1;
+padding:14px;
+border:none;
+border-radius:14px;
+font-weight:700;
+cursor:pointer;
+}
+
+.deposit{background:#16a34a;color:#fff}
+.withdraw{background:#ef4444;color:#fff}
+
+.card{
+background:#fff;
+margin:20px;
+border-radius:18px;
+padding:20px;
+box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+.input{
+width:100%;
+padding:10px;
+margin:10px 0;
+border-radius:10px;
+border:1px solid #e5e7eb;
+}
+
+.tx{
+display:flex;
+justify-content:space-between;
+margin:14px 0;
+font-size: 14px;
+}
+
+.credit{color:#16a34a;font-weight:700}
+.debit{color:#ef4444;font-weight:700}
+
+.bottom-nav{
+position:fixed;
+bottom:0;
+left:50%;
+transform:translateX(-50%);
+width:100%;
+max-width:400px;
+height:65px;
+background:#fff;
+border-top:1px solid #e5e7eb;
+display:flex;
+justify-content:space-around;
+align-items:center;
+}
+
+.nav-btn{
+text-decoration:none;
+color:#6b7280;
+font-size:13px;
+font-weight:600;
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+.nav-btn.active{
+color:#16a34a;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <header class="header">
+        <div class="logo">Fidelity Wallet</div>
+    </header>
+
+    <div class="balance-card">
+        <div>Available Balance</div>
+        <div id="balance" class="balance">₹0.00</div>
+    </div>
+
+    <div class="actions">
+        <button class="action-btn deposit" onclick="showDeposit()">Deposit</button>
+        <button class="action-btn withdraw" onclick="showWithdraw()">Withdraw</button>
+    </div>
+
+    <div id="depositBox" class="card" style="display:none;">
+        <h3>Add Funds</h3>
+        <input id="depositAmount" type="number" class="input" placeholder="Enter Amount">
+        <button class="action-btn deposit" onclick="depositMoney()">Confirm Deposit</button>
+    </div>
+
+    <div id="withdrawBox" class="card" style="display:none;">
+        <h3>Withdraw Funds</h3>
+        <input id="withdrawAmount" type="number" class="input" placeholder="Enter Amount">
+        <button class="action-btn withdraw" onclick="withdrawMoney()">Confirm Withdraw</button>
+    </div>
+
+    <div class="card" style="margin-bottom: 80px;">
+        <h3>Transaction History</h3>
+        <div id="history">Loading...</div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <a href="dashboard.html" class="nav-btn">🏠<span>Home</span></a>
+    <a href="wallet.html" class="nav-btn active">💰<span>Wallet</span></a>
+    <a href="profile.html" class="nav-btn">👤<span>Profile</span></a>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+const token = localStorage.getItem("token");
+
+function formatINR(amount){
+    return "₹" + Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+}
+
+async function loadWallet(){
+    try {
+        const res = await fetch("/api/wallet", {
+            headers: { Authorization: "Bearer " + token }
+        });
+        
+        if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const data = await res.json();
+
+        document.getElementById("balance").innerText = formatINR(data.balance);
+        const historyEl = document.getElementById("history");
+        historyEl.innerHTML = "";
+
+        if (data.transactions.length === 0) {
+            historyEl.innerHTML = "<p style='color:#666; font-size:13px;'>No transactions yet.</p>";
+        }
+
+        data.transactions.forEach(tx => {
+            const div = document.createElement("div");
+            div.className = "tx";
+            const isCredit = tx.type === 'Commission' || tx.type === 'Spin Reward' || tx.type === 'Deposit';
+            div.innerHTML = `
+                <div>
+                    <div>${tx.type} ${tx.stock ? '(' + tx.stock + ')' : ''}</div>
+                    <small style="color:#666; font-size:11px;">${new Date(tx.timestamp).toLocaleString()}</small>
+                </div>
+                <div class="${isCredit ? 'credit' : 'debit'}">
+                    ${isCredit ? "+" : "-"}${formatINR(tx.amount)}
+                </div>
+            `;
+            historyEl.appendChild(div);
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function showDeposit(){
+    document.getElementById("depositBox").style.display = "block";
+    document.getElementById("withdrawBox").style.display = "none";
+}
+
+function showWithdraw(){
+    document.getElementById("withdrawBox").style.display = "block";
+    document.getElementById("depositBox").style.display = "none";
+}
+
+async function depositMoney(){
+    const amount = parseFloat(document.getElementById("depositAmount").value);
+    if (!amount || amount <= 0) {
+        alert("Enter valid amount");
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/deposit", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token
+            },
+            body: JSON.stringify({ amount })
+        });
+        if (res.ok) {
+            alert("Deposit request submitted for approval");
+            document.getElementById("depositBox").style.display = "none";
+            loadWallet();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function withdrawMoney(){
+    const amount = parseFloat(document.getElementById("withdrawAmount").value);
+    if (!amount || amount <= 0) {
+        alert("Enter valid amount");
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/withdraw", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token
+            },
+            body: JSON.stringify({ amount })
+        });
+        if (res.ok) {
+            alert("Withdraw request submitted for approval");
+            document.getElementById("withdrawBox").style.display = "none";
+            loadWallet();
+        } else {
+            const data = await res.json();
+            alert(data.error || "Withdrawal failed");
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+loadWallet();
+</script>
+</body>
+</html>

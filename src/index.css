@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer components {
+  .tech-stat-card {
+    @apply bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow;
+  }
+  
+  .tech-stat-label {
+    @apply text-xs font-bold text-slate-400 uppercase tracking-wider mb-1;
+  }
+  
+  .tech-stat-value {
+    @apply text-2xl font-mono font-bold text-[#1E293B];
+  }
+  
+  .tech-table-header {
+    @apply text-[10px] font-bold text-slate-400 uppercase tracking-widest;
+  }
+  
+  .tech-table-cell {
+    @apply px-4 py-3 text-sm;
+  }
+  
+  .tech-status-pill {
+    @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight;
+  }
+  
+  .tech-btn {
+    @apply px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95;
+    @apply border border-slate-200 text-slate-600 hover:bg-slate-50;
+  }
+  
+  .tech-btn-primary {
+    @apply bg-[#10B981] border-[#10B981] text-white hover:bg-[#059669] shadow-lg shadow-emerald-900/10;
+  }
+
+  .tech-input {
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#10B981] outline-none transition-all text-sm;
+  }
+}
+
+body {
+  @apply bg-[#F0F2F5] text-slate-900;
+}

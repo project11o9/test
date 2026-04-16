@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Create Account</title>
+
+<link rel="stylesheet" href="css/auth.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    body {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        background: #f4f6f5;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="auth-container">
+
+    <h2>Create Account</h2>
+    <p>Start your trading journey</p>
+
+    <!-- ✅ FORM -->
+    <form id="signupForm">
+
+        <input id="name" type="text" placeholder="Full Name" required>
+
+        <input id="dob" type="date" required title="Date of Birth">
+
+        <input id="phone" type="tel" placeholder="Phone Number" required>
+
+        <input id="email" type="email" placeholder="Gmail Address" required>
+
+        <input id="password" type="password" placeholder="Password" required>
+
+        <input id="confirmPassword" type="password" placeholder="Confirm Password" required>
+
+        <!-- ✅ FIXED BUTTON -->
+        <button type="submit">Sign Up</button>
+
+    </form>
+
+    <div class="switch">
+        Already have an account?
+        <a href="login.html">Login</a>
+    </div>
+
+</div>
+
+<script src="js/signup.js"></script>
+
+</body>
+</html>
