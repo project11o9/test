@@ -235,7 +235,6 @@ text-decoration:none;color:#6b7280;
 
 <script src="js/auth.js"></script>
 <script>
-const token = localStorage.getItem('token');
 
 function formatINR(v){
     return "₹" + Number(v).toLocaleString("en-IN", { minimumFractionDigits: 2 });
@@ -244,7 +243,7 @@ function formatINR(v){
 async function loadProfile() {
     try {
         const res = await fetch('/api/user/profile', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            credentials: 'include'
         });
         if (res.ok) {
             const user = await res.json();
@@ -265,7 +264,6 @@ async function loadProfile() {
                 track.prepend(adminCard);
             }
         } else if (res.status === 401 || res.status === 403) {
-            localStorage.removeItem('token');
             window.location.href = 'login.html';
         }
     } catch (err) {

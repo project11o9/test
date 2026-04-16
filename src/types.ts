@@ -67,6 +67,8 @@ export interface DepositRequest {
   amount: number;
   status: 'pending' | 'approved' | 'rejected';
   timestamp: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
 }
 
 export interface WithdrawRequest {
@@ -75,4 +77,15 @@ export interface WithdrawRequest {
   amount: number;
   status: 'pending' | 'approved' | 'rejected';
   timestamp: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  admin_uid: string;
+  target_uid?: string;
+  timestamp: string;
+  [key: string]: any;
 }

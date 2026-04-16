@@ -1,0 +1,39 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Fidelity Platform API",
+    "version": "1.1.0",
+    "description": "Contract for user and admin APIs"
+  },
+  "servers": [{ "url": "http://localhost:3000" }],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": { "type": "apiKey", "in": "cookie", "name": "token" },
+      "bearerAuth": { "type": "http", "scheme": "bearer" }
+    },
+    "schemas": {
+      "Error": { "type": "object", "properties": { "error": { "type": "string" } } },
+      "LoginBody": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string" }, "password": { "type": "string" } } },
+      "DecisionBody": { "type": "object", "required": ["decision"], "properties": { "decision": { "type": "string", "enum": ["approved", "rejected"] } } },
+      "AmountBody": { "type": "object", "required": ["amount"], "properties": { "amount": { "type": "number" } } }
+    }
+  },
+  "paths": {
+    "/api/health": { "get": { "summary": "Health check", "responses": { "200": { "description": "OK" } } } },
+    "/api/openapi": { "get": { "summary": "OpenAPI contract", "responses": { "200": { "description": "Contract JSON" } } } },
+    "/api/auth/register": { "post": { "summary": "Register user", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginBody" } } } }, "responses": { "200": { "description": "Registered" }, "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
+    "/api/auth/login": { "post": { "summary": "Login user", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginBody" } } } }, "responses": { "200": { "description": "Logged in" } } } },
+    "/api/auth/logout": { "post": { "summary": "Logout", "security": [{ "cookieAuth": [] }], "responses": { "200": { "description": "Logged out" } } } },
+    "/api/auth/csrf": { "get": { "summary": "Refresh CSRF token", "security": [{ "cookieAuth": [] }], "responses": { "200": { "description": "Token issued" } } } },
+    "/api/user/profile": { "get": { "summary": "User profile", "security": [{ "cookieAuth": [] }], "responses": { "200": { "description": "Profile" } } } },
+    "/api/wallet": { "get": { "summary": "Wallet and transactions", "security": [{ "cookieAuth": [] }], "responses": { "200": { "description": "Wallet data" } } } },
+    "/api/deposit": { "post": { "summary": "Create deposit request", "security": [{ "cookieAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AmountBody" } } } }, "responses": { "200": { "description": "Submitted" } } } },
+    "/api/withdraw": { "post": { "summary": "Create withdraw request", "security": [{ "cookieAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AmountBody" } } } }, "responses": { "200": { "description": "Submitted" } } } },
+    "/api/reviews/submit": { "post": { "summary": "Submit review commission", "security": [{ "cookieAuth": [] }], "responses": { "200": { "description": "Commission processed" } } } },
+    "/api/spin/claim": { "post": { "summary": "Claim spin reward", "security": [{ "cookieAuth": [] }], "responses": { "200": { "description": "Reward processed" } } } },
+    "/api/admin/deposits/{id}/decision": { "post": { "summary": "Approve/reject deposit", "security": [{ "bearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DecisionBody" } } } }, "responses": { "200": { "description": "Processed" } } } },
+    "/api/admin/withdraws/{id}/decision": { "post": { "summary": "Approve/reject withdraw", "security": [{ "bearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DecisionBody" } } } }, "responses": { "200": { "description": "Processed" } } } },
+    "/api/admin/reconcile/user/{uid}": { "post": { "summary": "Reconcile user wallet", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Reconciled" } } } },
+    "/api/admin/audit-logs/export": { "get": { "summary": "Export audit logs CSV", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "CSV" } } } }
+  }
+}

@@ -48,6 +48,7 @@ import {
   query, 
   where, 
   orderBy,
+  limit,
   getDoc,
   setDoc,
   getDocs,
@@ -62,7 +63,8 @@ import {
   SpinSettings, 
   InjectionRule,
   DepositRequest,
-  WithdrawRequest
+  WithdrawRequest,
+  AuditLog
 } from './types';
 
 // Error Handling Helper
@@ -190,7 +192,7 @@ export default function App() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '' });
-  const [activePage, setActivePage] = useState<'dashboard' | 'users' | 'stocks' | 'notifications' | 'settings'>('dashboard');
+  const [activePage, setActivePage] = useState<'dashboard' | 'users' | 'stocks' | 'notifications' | 'settings' | 'audit'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Data State
@@ -201,6 +203,7 @@ export default function App() {
   const [spinSettings, setSpinSettings] = useState<SpinSettings | null>(null);
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
   const [withdraws, setWithdraws] = useState<WithdrawRequest[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
@@ -209,6 +212,7 @@ export default function App() {
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [editingStock, setEditingStock] = useState<Partial<Stock> | null>(null);
+  const [auditActionFilter, setAuditActionFilter] = useState('');
 
   // Auth Listener
   useEffect(() => {
@@ -223,15 +227,15 @@ export default function App() {
   useEffect(() => {
     if (!user || !isAuthReady) return;
 
-    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+    const unsubUsers = onSnapshot(query(collection(db, 'users'), limit(200)), (snapshot) => {
       setUsers(snapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as User)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'users'));
 
-    const unsubStocks = onSnapshot(collection(db, 'stocks'), (snapshot) => {
+    const unsubStocks = onSnapshot(query(collection(db, 'stocks'), limit(200)), (snapshot) => {
       setStocks(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Stock)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'stocks'));
 
-    const unsubNotifications = onSnapshot(query(collection(db, 'notifications'), orderBy('timestamp', 'desc')), (snapshot) => {
+    const unsubNotifications = onSnapshot(query(collection(db, 'notifications'), orderBy('timestamp', 'desc'), limit(200)), (snapshot) => {
       setNotifications(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Notification)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'notifications'));
 
@@ -243,13 +247,17 @@ export default function App() {
       if (doc.exists()) setSpinSettings(doc.data() as SpinSettings);
     }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/spin'));
 
-    const unsubDeposits = onSnapshot(query(collection(db, 'deposits'), where('status', '==', 'pending')), (snapshot) => {
+    const unsubDeposits = onSnapshot(query(collection(db, 'deposits'), where('status', '==', 'pending'), limit(200)), (snapshot) => {
       setDeposits(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as DepositRequest)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'deposits'));
 
-    const unsubWithdraws = onSnapshot(query(collection(db, 'withdraws'), where('status', '==', 'pending')), (snapshot) => {
+    const unsubWithdraws = onSnapshot(query(collection(db, 'withdraws'), where('status', '==', 'pending'), limit(200)), (snapshot) => {
       setWithdraws(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as WithdrawRequest)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'withdraws'));
+
+    const unsubAuditLogs = onSnapshot(query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(200)), (snapshot) => {
+      setAuditLogs(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as AuditLog)));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'audit_logs'));
 
     return () => {
       unsubUsers();
@@ -259,6 +267,7 @@ export default function App() {
       unsubSpin();
       unsubDeposits();
       unsubWithdraws();
+      unsubAuditLogs();
     };
   }, [user, isAuthReady]);
 
@@ -393,6 +402,46 @@ export default function App() {
       });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, 'settings/features');
+    }
+  };
+
+  const decideDeposit = async (id: string, decision: 'approved' | 'rejected') => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/admin/deposits/${id}/decision`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'x-idempotency-key': `${id}-${decision}`
+        },
+        body: JSON.stringify({ decision }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to process deposit');
+      alert(data.message);
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  };
+
+  const decideWithdraw = async (id: string, decision: 'approved' | 'rejected') => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/admin/withdraws/${id}/decision`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'x-idempotency-key': `${id}-${decision}`
+        },
+        body: JSON.stringify({ decision }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to process withdrawal');
+      alert(data.message);
+    } catch (err) {
+      alert((err as Error).message);
     }
   };
 
@@ -531,6 +580,13 @@ export default function App() {
             collapsed={!isSidebarOpen}
             onClick={() => setActivePage('settings')} 
           />
+          <NavItem 
+            icon={<ShieldAlert size={18} />} 
+            label="Audit Logs" 
+            active={activePage === 'audit'} 
+            collapsed={!isSidebarOpen}
+            onClick={() => setActivePage('audit')} 
+          />
         </nav>
 
         <div className="p-6 mt-auto border-t border-white/5">
@@ -619,7 +675,20 @@ export default function App() {
                               <div className="font-bold text-slate-800">₹{d.amount.toLocaleString()}</div>
                               <div className="text-xs text-slate-500">UID: {d.user_uid}</div>
                             </div>
-                            <button className="tech-btn tech-btn-primary text-xs py-1 px-3">Review</button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => decideDeposit(d.id, 'approved')}
+                                className="tech-btn tech-btn-primary text-xs py-1 px-3"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => decideDeposit(d.id, 'rejected')}
+                                className="text-xs py-1 px-3 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50"
+                              >
+                                Reject
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {deposits.length === 0 && <div className="text-center py-8 text-slate-400 text-sm">No pending deposits</div>}
@@ -638,7 +707,20 @@ export default function App() {
                               <div className="font-bold text-slate-800">₹{w.amount.toLocaleString()}</div>
                               <div className="text-xs text-slate-500">UID: {w.user_uid}</div>
                             </div>
-                            <button className="tech-btn tech-btn-primary text-xs py-1 px-3">Review</button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => decideWithdraw(w.id, 'approved')}
+                                className="tech-btn tech-btn-primary text-xs py-1 px-3"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => decideWithdraw(w.id, 'rejected')}
+                                className="text-xs py-1 px-3 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50"
+                              >
+                                Reject
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {withdraws.length === 0 && <div className="text-center py-8 text-slate-400 text-sm">No pending withdrawals</div>}
@@ -653,9 +735,7 @@ export default function App() {
                   <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="font-bold text-slate-800">User Directory</h3>
                     <div className="flex gap-2">
-                      <button className="tech-btn flex items-center gap-2">
-                        <Plus size={16} /> Add User
-                      </button>
+                      <div className="text-xs text-slate-500 px-3 py-2 border rounded-lg">User creation is handled via signup flow</div>
                     </div>
                   </div>
                   <table className="w-full text-left border-collapse">
@@ -783,20 +863,49 @@ export default function App() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target Stock</label>
-                        <select className="w-full p-2 rounded border border-slate-200 text-sm outline-none">
+                        <select className="w-full p-2 rounded border border-slate-200 text-sm outline-none" id="injectStockId">
                           {stocks.map(s => <option key={s.id} value={s.id}>{s.symbol} - {s.name}</option>)}
                         </select>
                       </div>
                       <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Injection Position</label>
-                        <input type="number" placeholder="e.g. 7" className="w-full p-2 rounded border border-slate-200 text-sm outline-none" />
+                        <input type="number" placeholder="e.g. 7" className="w-full p-2 rounded border border-slate-200 text-sm outline-none" id="injectPosition" />
                       </div>
                       <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target User (UID)</label>
-                        <input type="text" placeholder="Global if empty" className="w-full p-2 rounded border border-slate-200 text-sm outline-none" />
+                        <input type="text" placeholder="Global if empty" className="w-full p-2 rounded border border-slate-200 text-sm outline-none" id="injectTargetUid" />
                       </div>
                     </div>
-                    <button className="mt-6 tech-btn tech-btn-primary w-full py-3">Apply Injection Logic</button>
+                    <button
+                      onClick={async () => {
+                        const stockId = (document.getElementById('injectStockId') as HTMLSelectElement).value;
+                        const position = Number((document.getElementById('injectPosition') as HTMLInputElement).value);
+                        const targetUid = (document.getElementById('injectTargetUid') as HTMLInputElement).value;
+                        if (!stockId || !Number.isFinite(position)) {
+                          alert('Select stock and valid position');
+                          return;
+                        }
+                        try {
+                          const token = await auth.currentUser?.getIdToken();
+                          const res = await fetch('/api/admin/injection-rules', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ stockId, position, target_uid: targetUid || null, active: true })
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || 'Failed to save rule');
+                          alert('Injection rule saved');
+                        } catch (err) {
+                          alert((err as Error).message);
+                        }
+                      }}
+                      className="mt-6 tech-btn tech-btn-primary w-full py-3"
+                    >
+                      Apply Injection Logic
+                    </button>
                   </div>
                 </div>
               )}
@@ -813,6 +922,14 @@ export default function App() {
                           <option value="multi">Multiple Select</option>
                           <option value="single">Single User</option>
                         </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Single UID (for Single)</label>
+                        <input type="text" className="w-full p-3 rounded-xl border border-slate-200 text-sm outline-none" placeholder="user_uid" id="notifSingleUid" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Comma-separated UIDs (for Multi)</label>
+                        <input type="text" className="w-full p-3 rounded-xl border border-slate-200 text-sm outline-none" placeholder="uid1,uid2,uid3" id="notifMultiUids" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Alert Type</label>
@@ -836,7 +953,20 @@ export default function App() {
                           const message = (document.getElementById('notifMsg') as HTMLTextAreaElement).value;
                           const type = (document.getElementById('notifType') as HTMLSelectElement).value as any;
                           const target = (document.getElementById('notifTarget') as HTMLSelectElement).value;
-                          if(title && message) sendNotification({ title, message, type, target_uids: [target] });
+                          const singleUid = (document.getElementById('notifSingleUid') as HTMLInputElement).value.trim();
+                          const multiUidsRaw = (document.getElementById('notifMultiUids') as HTMLInputElement).value;
+                          const multiUids = multiUidsRaw.split(',').map(v => v.trim()).filter(Boolean);
+
+                          let target_uids: string[] = [];
+                          if (target === 'all') target_uids = ['all'];
+                          else if (target === 'single') target_uids = singleUid ? [singleUid] : [];
+                          else if (target === 'multi') target_uids = multiUids;
+
+                          if (!title || !message || target_uids.length === 0) {
+                            alert('Provide title, message and valid target users');
+                            return;
+                          }
+                          sendNotification({ title, message, type, target_uids });
                         }}
                         className="w-full tech-btn tech-btn-primary py-3 flex items-center justify-center gap-2"
                       >
@@ -912,7 +1042,28 @@ export default function App() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                         <span className="font-bold text-slate-700">Feature Status</span>
-                        <button className={`px-4 py-1.5 rounded-lg text-xs font-bold text-white ${spinSettings?.enabled ? 'bg-[#10B981]' : 'bg-slate-400'}`}>
+                        <button
+                          onClick={async () => {
+                            if (!spinSettings) return;
+                            try {
+                              const token = await auth.currentUser?.getIdToken();
+                              const res = await fetch('/api/admin/settings/spin', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ enabled: !spinSettings.enabled, rewards: spinSettings.rewards })
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || 'Failed to toggle spin settings');
+                              alert(data.message || 'Spin settings updated');
+                            } catch (err) {
+                              alert((err as Error).message);
+                            }
+                          }}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-bold text-white ${spinSettings?.enabled ? 'bg-[#10B981]' : 'bg-slate-400'}`}
+                        >
                           {spinSettings?.enabled ? 'ENABLED' : 'DISABLED'}
                         </button>
                       </div>
@@ -922,14 +1073,93 @@ export default function App() {
                           <div key={i} className="flex items-center gap-4 p-3 border border-slate-100 rounded-xl">
                             <div className="flex-1 font-bold text-slate-800">{r.label}</div>
                             <div className="w-24">
-                              <input type="number" className="w-full p-1 text-xs border rounded" value={r.probability} readOnly />
+                              <input type="number" className="w-full p-1 text-xs border rounded" defaultValue={r.probability} id={`spinProb-${i}`} />
                             </div>
                             <div className="w-24 font-mono text-xs text-[#10B981]">₹{r.value}</div>
                           </div>
                         ))}
                       </div>
-                      <button className="w-full tech-btn tech-btn-primary py-3">Update Spin Logic</button>
+                      <button
+                        onClick={async () => {
+                          if (!spinSettings) return;
+                          const rewards = spinSettings.rewards.map((r, i) => ({
+                            ...r,
+                            probability: Number((document.getElementById(`spinProb-${i}`) as HTMLInputElement).value)
+                          }));
+                          const enabled = spinSettings.enabled;
+                          try {
+                            const token = await auth.currentUser?.getIdToken();
+                            const res = await fetch('/api/admin/settings/spin', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ enabled, rewards })
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Failed to update spin logic');
+                            alert(data.message || 'Spin logic updated');
+                          } catch (err) {
+                            alert((err as Error).message);
+                          }
+                        }}
+                        className="w-full tech-btn tech-btn-primary py-3"
+                      >
+                        Update Spin Logic
+                      </button>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {activePage === 'audit' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden shadow-sm">
+                  <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="font-bold text-slate-800">Audit Logs</h3>
+                    <div className="flex gap-2">
+                      <input
+                        value={auditActionFilter}
+                        onChange={(e) => setAuditActionFilter(e.target.value)}
+                        placeholder="Filter action"
+                        className="px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      />
+                      <button
+                        onClick={async () => {
+                          try {
+                            const token = await auth.currentUser?.getIdToken();
+                            const params = new URLSearchParams({ limit: '500' });
+                            if (auditActionFilter.trim()) params.set('action', auditActionFilter.trim());
+                            const res = await fetch(`/api/admin/audit-logs/export?${params.toString()}`, {
+                              headers: { Authorization: `Bearer ${token}` }
+                            });
+                            if (!res.ok) throw new Error('Export failed');
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `audit-logs-${new Date().toISOString()}.csv`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          } catch (err) {
+                            alert((err as Error).message);
+                          }
+                        }}
+                        className="tech-btn"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {auditLogs.filter(log => !auditActionFilter || String(log.action || '').includes(auditActionFilter)).map(log => (
+                      <div key={log.id} className="p-4">
+                        <div className="text-xs text-slate-500">{new Date(log.timestamp).toLocaleString()}</div>
+                        <div className="font-semibold text-slate-800">{log.action}</div>
+                        <div className="text-xs text-slate-500">Admin: {log.admin_uid} {log.target_uid ? `| Target: ${log.target_uid}` : ''}</div>
+                      </div>
+                    ))}
+                    {auditLogs.length === 0 && <div className="p-12 text-center text-slate-400">No audit logs available</div>}
                   </div>
                 </div>
               )}
@@ -961,7 +1191,10 @@ export default function App() {
               </div>
 
               <div className="space-y-4">
-                <button className="w-full tech-btn tech-btn-primary py-3 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => window.open(`/profile.html?uid=${selectedUser.uid}`, '_blank')}
+                  className="w-full tech-btn tech-btn-primary py-3 flex items-center justify-center gap-2"
+                >
                   <Eye size={18} /> View User Dashboard
                 </button>
                 <button 
@@ -986,6 +1219,28 @@ export default function App() {
                   className="w-full py-3 rounded-xl border border-rose-200 text-rose-600 font-bold hover:bg-rose-50 transition-colors flex items-center justify-center gap-2"
                 >
                   <Trash2 size={18} /> Delete User Account
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const token = await auth.currentUser?.getIdToken();
+                      const res = await fetch(`/api/admin/reconcile/user/${selectedUser.uid}`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        }
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || 'Reconciliation failed');
+                      alert(`Reconciled balance: ₹${Number(data.computedBalance || 0).toLocaleString()}`);
+                    } catch (err) {
+                      alert((err as Error).message);
+                    }
+                  }}
+                  className="w-full py-3 rounded-xl border border-blue-200 text-blue-600 font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={18} /> Reconcile Wallet
                 </button>
               </div>
             </div>

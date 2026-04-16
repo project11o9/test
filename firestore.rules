@@ -100,12 +100,24 @@ service cloud.firestore {
 
     match /deposits/{depositId} {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.user_uid == request.auth.uid);
-      allow write: if isAdmin() || (isAuthenticated() && request.resource.data.user_uid == request.auth.uid);
+      allow create: if isAuthenticated() &&
+        request.resource.data.user_uid == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
     }
 
     match /withdraws/{withdrawId} {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.user_uid == request.auth.uid);
-      allow write: if isAdmin() || (isAuthenticated() && request.resource.data.user_uid == request.auth.uid);
+      allow create: if isAuthenticated() &&
+        request.resource.data.user_uid == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow create: if isAdmin();
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
   }
 }

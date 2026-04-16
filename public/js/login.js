@@ -7,6 +7,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         console.log('Attempting login for:', email);
         const res = await fetch('/api/auth/login', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
@@ -15,8 +16,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         console.log('Login response:', data);
 
         if (res.ok) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
             // Redirect based on role
             if (data.user.role === 'admin') {
                 window.location.href = '/admin';
